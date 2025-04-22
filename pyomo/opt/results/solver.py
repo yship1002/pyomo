@@ -237,3 +237,4 @@ class SolverInformation(MapContainer):
         # termination status.
         self.declare('termination_message')
         self.declare('statistics', value=SolverStatistics(), active=False)
+        self.declare('root_node_time',value=-100)

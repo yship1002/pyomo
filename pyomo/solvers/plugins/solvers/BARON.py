@@ -277,22 +277,26 @@ class BARONSHELL(SystemCallSolver):
     def process_logfile(self):
         results = SolverResults()
 
-        #
-        # Process logfile
-        #
         cuts = ['Bilinear', 'LD-Envelopes', 'Multilinears', 'Convexity', 'Integrality']
 
-        # Collect cut-generation statistics from the log file
-        with open(self._log_file) as OUTPUT:
-            for line in OUTPUT:
-                for field in cuts:
-                    if field in line:
-                        try:
-                            results.solver.statistics[field + '_cuts'] = int(
-                                line.split()[1]
-                            )
-                        except:
-                            pass
+
+        for line in self._log.splitlines():
+            for field in cuts:
+                if field in line:
+                    try:
+                        results.solver.statistics[field + '_cuts'] = int(line.split()[1])
+                    except:
+                        pass
+
+            # Root node timing extraction
+            if line.strip().startswith('1 '):  # Node 0 output
+                tokens = line.strip().split()
+                if len(tokens) >= 2:
+                    try:
+                        root_time = float(tokens[1])
+                        setattr(results.solver, "root_node_time", root_time)
+                    except ValueError:
+                        pass
 
         return results
 
