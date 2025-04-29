@@ -279,7 +279,7 @@ class BARONSHELL(SystemCallSolver):
 
         cuts = ['Bilinear', 'LD-Envelopes', 'Multilinears', 'Convexity', 'Integrality']
 
-
+        infeasible=False
         for line in self._log.splitlines():
             for field in cuts:
                 if field in line:
@@ -289,14 +289,21 @@ class BARONSHELL(SystemCallSolver):
                         pass
 
             # Root node timing extraction
-            if line.strip().startswith('1 '):  # Node 0 output
-                tokens = line.strip().split()
-                if len(tokens) >= 2:
-                    try:
-                        root_time = float(tokens[1])
-                        setattr(results.solver, "root_node_time", root_time)
-                    except ValueError:
-                        pass
+            if "infeasible" in line: #check if problem is infeasible if so set infeasible to True
+                infeasible = True
+            if not infeasible:
+                if line.strip().startswith('1 '):  # Node 0 output
+                    tokens = line.strip().split()
+                    if len(tokens) >= 2:
+                        try:
+                            root_time = float(tokens[1])
+                            setattr(results.solver, "root_node_time", root_time)
+                        except ValueError:
+                            pass
+            else: #if infeasible root node time is total wall time
+                if line.strip().startswith("Wall "):
+                    tokens = line.strip().split()
+                    setattr(results.solver, "root_node_time", float(tokens[3]))      
 
         return results
 
