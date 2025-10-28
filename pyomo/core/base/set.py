@@ -47,6 +47,7 @@ from pyomo.core.base.initializer import (
     ParameterizedIndexedCallInitializer,
     ParameterizedInitializer,
     ParameterizedScalarCallInitializer,
+    ScalarCallInitializer,
 )
 from pyomo.core.base.range import (
     NumericRange,
@@ -93,10 +94,10 @@ All Sets implement one of the following APIs:
 1. `class SetData(ComponentData)`
    *(base class for all AML Sets)*
 
-2. `class _FiniteSetMixin(object)`
+2. `class _FiniteSetMixin`
    *(pure virtual interface, adds support for discrete/iterable sets)*
 
-4. `class _OrderedSetMixin(object)`
+4. `class _OrderedSetMixin`
    *(pure virtual interface, adds support for ordered Sets)*
 
 This is a bit of a change from python set objects.  First, the
@@ -298,7 +299,7 @@ def simple_set_rule(rule):
     return rule_wrapper(rule, {None: Set.End})
 
 
-class UnknownSetDimen(object):
+class UnknownSetDimen:
     pass
 
 
@@ -517,7 +518,7 @@ class TuplizeValuesInitializer(InitializerBase):
         return (tuple(_val[i : i + d]) for i in range(0, len(_val), d))
 
 
-class _NotFound(object):
+class _NotFound:
     "Internal type flag used to indicate if an object is not found in a set"
 
     pass
@@ -1201,7 +1202,7 @@ class _SetDataBase(metaclass=RenamedClass):
     __renamed__version__ = '6.7.2'
 
 
-class _FiniteSetMixin(object):
+class _FiniteSetMixin:
     __slots__ = ()
 
     def __len__(self):
@@ -1607,7 +1608,7 @@ class _FiniteSetData(metaclass=RenamedClass):
     __renamed__version__ = '6.7.2'
 
 
-class _ScalarOrderedSetMixin(object):
+class _ScalarOrderedSetMixin:
     # This mixin is required because scalar ordered sets implement
     # __getitem__() as an alias of at()
     __slots__ = ()
@@ -1624,7 +1625,7 @@ class _ScalarOrderedSetMixin(object):
             yield _keys[0], self
 
 
-class _OrderedSetMixin(object):
+class _OrderedSetMixin:
     __slots__ = ()
     _valid_getitem_keys = {None, (None,), Ellipsis}
 
@@ -1941,7 +1942,7 @@ class _InsertionOrderSetData(metaclass=RenamedClass):
     __renamed__version__ = '6.7.2'
 
 
-class _SortedSetMixin(object):
+class _SortedSetMixin:
     """"""
 
     __slots__ = ()
@@ -2117,10 +2118,10 @@ class Set(IndexedComponent):
     class End(metaclass=_SetEndType):
         pass
 
-    class InsertionOrder(object):
+    class InsertionOrder:
         pass
 
-    class SortedOrder(object):
+    class SortedOrder:
         pass
 
     _ValidOrderedArguments = {True, False, InsertionOrder, SortedOrder}
@@ -2304,6 +2305,19 @@ class Set(IndexedComponent):
         if self._anonymous_sets is not None:
             for _set in self._anonymous_sets:
                 _set.construct()
+
+        if self.is_indexed():
+            # A constant rule could return a dict-like thing or matrix
+            # that we would then want to process with Initializer().  If
+            # the rule actually returned a constant, then this is just a
+            # little overhead.
+            if self._init_values is not None and self._init_values._init.constant():
+                self._init_values = TuplizeValuesInitializer(
+                    Initializer(
+                        self._init_values._init(self.parent_block(), None),
+                        treat_sequences_as_mappings=False,
+                    )
+                )
 
         if data is not None:
             # Data supplied to construct() should override data provided
@@ -4009,7 +4023,7 @@ class SetProduct(SetOperator):
             return len(self._sets)
         # By convention, "None" trumps UnknownSetDimen.  That is, a set
         # product is "non-dimentioned" if any term is non-dimentioned,
-        # even if we do not yet know the dimentionality of another term.
+        # even if we do not yet know the dimensionality of another term.
         ans = 0
         _unknown = False
         for s in self._sets:
@@ -4084,7 +4098,7 @@ class SetProduct_InfiniteSet(SetProduct):
             val = (val,)
             v_len = 1
 
-        # Get the dimentionality of all the component sets
+        # Get the dimensionality of all the component sets
         setDims = list(s.dimen for s in self._sets)
 
         # For this search, if a subset has an unknown dimension, assume
@@ -4092,7 +4106,7 @@ class SetProduct_InfiniteSet(SetProduct):
         for i, d in enumerate(setDims):
             if d is UnknownSetDimen:
                 setDims[i] = None
-        # Find the starting index for each subset (based on dimentionality)
+        # Find the starting index for each subset (based on dimensionality)
         index = [None] * len(setDims)
         lastIndex = 0
         for i, dim in enumerate(setDims):

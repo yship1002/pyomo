@@ -105,8 +105,28 @@ SkipTests['cplex', 'nl', 'QCP_simple'] = (
 #
 # GUROBI
 #
-# NO EXPECTED FAILURES
-#
+
+# 12.0.3 (for AMPL only) returns all zeros for suffixes
+MissingSuffixFailures['gurobi', 'nl', 'LP_duals_maximize'] = (
+    lambda v: v[:3] == (12, 0, 3),
+    {'dual': (False, {})},
+    "AMPL Gurobi 12.0.3 fails to report duals for problems solved in presolve",
+)
+MissingSuffixFailures['gurobi', 'nl', 'LP_duals_minimize'] = (
+    lambda v: v[:3] == (12, 0, 3),
+    {'dual': (False, {})},
+    "AMPL Gurobi 12.0.3 fails to report duals for problems solved in presolve",
+)
+MissingSuffixFailures['gurobi', 'nl', 'LP_inactive_index'] = (
+    lambda v: v[:3] == (12, 0, 3),
+    {'dual': (False, {})},
+    "AMPL Gurobi 12.0.3 fails to report duals for problems solved in presolve",
+)
+MissingSuffixFailures['gurobi', 'nl', 'QP_simple'] = (
+    lambda v: v[:3] == (12, 0, 3),
+    {'dual': (False, {})},
+    "AMPL Gurobi 12.0.3 fails to report duals for problems solved in presolve",
+)
 
 #
 # GAMS
@@ -291,7 +311,7 @@ for prob in (
     'QP_simple',
 ):
     ExpectedFailures['baron', 'bar', prob] = (
-        lambda v: v == (25, 7, 16, 0),
+        lambda v: (25, 7, 10) <= v[:3] <= (25, 7, 16),
         "BARON 25.7.16 returns 0 for duals/rc for models solved in preprocessing",
     )
 
